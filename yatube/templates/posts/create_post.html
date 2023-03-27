@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if is_edit %}
+    Редактировать пост
+  {% else %}
+    Новый пост
+  {% endif %}
+{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8 p-5">
+      <div class="card">
+        <div class="card-header">
+          {% if is_edit %}
+            Редактировать запись
+          {% else %}
+            Добавить запись
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data"
+          {% if is_edit %}
+            {% with request.resolver_match.kwargs.post_id as post_id %}
+              action="{% url "posts:post_edit" post_id %}"
+            {% endwith %}
+          {% else %}
+            action="{% url "posts:create_post" %}"
+          {% endif %}>
+            <input type="hidden" name="csrfmiddlewaretoken" value="">
+            {% csrf_token %}
+            <div class="form-group row my-3 p-3">
+              <label for="id_text">
+                Текст поста
+                <span class="required text-danger" >*</span>
+              </label>
+              {% load user_filters %}
+              {{ form.text|addclass:"form-control" }}
+              <small id="id_text-help" class="form-text text-muted">
+                {% if is_edit %}
+                  Отредактируйте текущий пост
+                {% else %}
+                  {{ form.text.help_text }}
+                {% endif %}
+              </small>
+            </div>
+            <div class="form-group row my-3 p-3">
+              <label for="id_group">
+                Группа                  
+              </label>
+              <select name="group" class="form-control" id="id_group">
+                {% for field in form.group %}
+                  {{ field }}
+                {% endfor %}
+              </select>
+              <small id="id_group-help" class="form-text text-muted">
+                {{ form.group.help_text }}
+              </small>
+            </div>
+            <div class="form-group row my-3 p-3">
+              <label for="id_image">
+                Добавить картинку
+              </label>
+              {{ form.image }}
+            </div>
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">
+                {% if is_edit %}
+                  Сохранить
+                {% else %}
+                  Добавить
+                {% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
