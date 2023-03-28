@@ -193,30 +193,40 @@ class PostViewTests(TestCase):
         self.assertIsInstance(is_edit, bool)
         self.assertEqual(is_edit, True)
 
-    def test_profile_follow_create_unfollow_delete_following(self):
-        """Авторизованный пользователь может подписываться на других
-        пользователей и удалять их из подписок. При попытке подписаться на
-        автора, на которого уже есть подписка - новая подписка не создаётся.
+    def test_profile_follow_create_unique_following(self):
+        """Авторизованный пользователь может подписываться на других 
+        пользователей. При попытке подписаться на автора, на которого уже есть
+        подписка - новая подписка не создаётся.
         """
         self.assertFalse(
             Follow.objects.filter(
                 user=PostViewTests.follower,
-                author=PostViewTests.author,
+                author=PostViewTests.author
             ).exists()
         )
         PostViewTests.follower_client.get(PostViewTests.follow_url)
         self.assertTrue(
             Follow.objects.filter(
                 user=PostViewTests.follower,
-                author=PostViewTests.author,
+                author=PostViewTests.author
             ).exists()
         )
         PostViewTests.follower_client.get(PostViewTests.follow_url)
         self.assertEqual(
             Follow.objects.filter(
                 user=PostViewTests.follower,
-                author=PostViewTests.author,
+                author=PostViewTests.author
             ).count(), 1
+        )
+        Follow.objects.get(
+            user=PostViewTests.follower,
+            author=PostViewTests.author
+        ).delete()
+
+    def test_profile_unfollow_delete_following(self):
+        Follow.objects.create(
+            user=PostViewTests.follower,
+            author=PostViewTests.author
         )
         PostViewTests.follower_client.get(PostViewTests.unfollow_url)
         self.assertFalse(
@@ -229,7 +239,10 @@ class PostViewTests(TestCase):
     def test_follow_page_contain_new_post_if_following(self):
         """Новая запись пользователя появляется в ленте тех, кто на него
         подписан и не появляется в ленте тех, кто не подписан."""
-        PostViewTests.follower_client.get(PostViewTests.follow_url)
+        Follow.objects.create(
+            user=PostViewTests.follower,
+            author=PostViewTests.author
+        )
         new_post = Post.objects.create(
             text='Пост отобразится в ленте только у подписчика.',
             author=PostViewTests.author,
@@ -242,6 +255,10 @@ class PostViewTests(TestCase):
             reverse('posts:follow_index')
         )
         self.assertNotIn(new_post, response.context['page_obj'])
+        Follow.objects.get(
+            user=PostViewTests.follower,
+            author=PostViewTests.author
+        ).delete()
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
