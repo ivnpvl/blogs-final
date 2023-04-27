@@ -19,14 +19,13 @@
         </div>
         <div class="card-body">
           <form method="post" enctype="multipart/form-data"
-          {% if is_edit %}
-            {% with request.resolver_match.kwargs.post_id as post_id %}
-              action="{% url "posts:post_edit" post_id %}"
-            {% endwith %}
-          {% else %}
-            action="{% url "posts:create_post" %}"
-          {% endif %}>
-            <input type="hidden" name="csrfmiddlewaretoken" value="">
+            {% if is_edit %}
+              {% with request.resolver_match.kwargs.post_id as post_id %}
+                action="{% url "posts:post_edit" post_id %}"
+              {% endwith %}
+            {% else %}
+              action="{% url "posts:create_post" %}"
+            {% endif %}>
             {% csrf_token %}
             <div class="form-group row my-3 p-3">
               <label for="id_text">

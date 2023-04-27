@@ -133,7 +133,11 @@ class Follow(models.Model):
         ordering = ('author',)
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'author'],
                 name='unique_user_author',
-            )
+                fields=['user', 'author'],
+            ),
+            models.CheckConstraint(
+                name='prevent_self_follow',
+                check=~models.Q(user=models.F('author')),
+            ),
         ]

@@ -27,6 +27,7 @@ class PostFormTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create(username='TestUser')
+        cls.not_author = User.objects.create(username='TestNotAuthor')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -38,6 +39,8 @@ class PostFormTest(TestCase):
         )
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
+        cls.not_author_client = Client()
+        cls.not_author_client.force_login(cls.not_author)
         cls.profile_url = reverse(
             'posts:profile', kwargs={'username': cls.author.username}
         )
@@ -58,17 +61,21 @@ class PostFormTest(TestCase):
                     name='create_small.gif',
                     content=SMALL_GIF,
                     content_type='image/gif',
-                )
+                ),
             },
-            'edit': {
+            'author_edit': {
                 'text': 'Необходимо изменить этот пост!',
                 'group': cls.group.id,
                 'image': SimpleUploadedFile(
                     name='edit_small.gif',
                     content=SMALL_GIF,
                     content_type='image/gif',
-                )
-            }
+                ),
+            },
+            'not_author_edit': {
+                'text': 'Только автор может редактировать пост!',
+            },
+
         }
         cls.comment_form_data = {'text': 'Тестовый комментарий'}
 
@@ -96,22 +103,38 @@ class PostFormTest(TestCase):
             ).exists()
         )
 
-    def test_post_edit_with_valid_form(self):
-        """Валидная форма редактирует имеющуюся запись в Post."""
+    def test_post_edit_with_valid_form_from_author(self):
+        """Валидная форма от автора редактирует имеющуюся запись в Post."""
         posts_count = Post.objects.count()
         response = self.author_client.post(
             PostFormTest.post_edit_url,
-            data=PostFormTest.post_form_data['edit'],
+            data=PostFormTest.post_form_data['author_edit'],
             follow=True,
         )
         self.assertRedirects(response, PostFormTest.post_detail_url)
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(
             Post.objects.filter(
-                text=PostFormTest.post_form_data['edit']['text'],
+                text=PostFormTest.post_form_data['author_edit']['text'],
                 author=PostFormTest.author,
-                group=PostFormTest.post_form_data['edit']['group'],
+                group=PostFormTest.post_form_data['author_edit']['group'],
                 image='posts/edit_small.gif',
+            ).exists()
+        )
+
+    def test_post_edit_redirect_not_author_and_dont_edit_post(self):
+        """Форма не от автора не редактирует имеющуюся запись в Post."""
+        posts_count = Post.objects.count()
+        response = self.not_author_client.post(
+            PostFormTest.post_edit_url,
+            data=PostFormTest.post_form_data['not_author_edit'],
+            follow=True,
+        )
+        self.assertRedirects(response, PostFormTest.post_detail_url)
+        self.assertEqual(Post.objects.count(), posts_count)
+        self.assertFalse(
+            Post.objects.filter(
+                text=PostFormTest.post_form_data['not_author_edit']['text'],
             ).exists()
         )
 
